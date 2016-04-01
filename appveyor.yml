@@ -1,0 +1,27 @@
+image:
+  - Visual Studio 2015
+  - Visual Studio 2013
+
+install:
+  - cmd: git submodule update --init --remote
+  - cmd: if not "%VS140COMNTOOLS%" == "" if "%VSINSTALLDIR%" == "" call "%VS140COMNTOOLS%\vsvars32.bat"
+  - cmd: if not "%VS120COMNTOOLS%" == "" if "%VSINSTALLDIR%" == "" call "%VS120COMNTOOLS%\vsvars32.bat"
+
+build_script:
+  - cmd: nmake -f Bootstrap.mak windows
+
+test_script:
+  - cmd: .\bin\release\premake5.exe test
+
+before_deploy:
+  - cmd: appveyor PushArtifact bin\release\premake5.exe
+
+deploy:
+  - provider: GitHub
+    auth_token:
+      secure: VpK2xs4TKfX4YHbj7Z4ZAyo6uzvzIYHnDByFHayBLawuUZTdwNu93wVxa/RcRp7G
+    artifact: /bin\release\premake5*\.exe/
+    force_update: false
+    on:
+      appveyor_repo_tag: true
+      VisualStudioVersion: "14.0"
