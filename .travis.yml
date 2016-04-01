@@ -2,7 +2,26 @@ os:
   - linux
   - osx
 
-script:
- - make -f Bootstrap.mak $TRAVIS_OS_NAME
- - bin/release/premake5 test
+language: c
+compiler:
+  - gcc
+  - clang
 
+env:
+  global:
+    - secure: BTJJGl7TnOfikTTGvhU7LELC4YlMRX4ueH7fq2Irj3ridzoH97SEKKKqvMABUERlAGbaz/h5aLezLfpr6W98Cg+SycMs/5/TPJVP893Xji1kI3IZAZd77E14eDpOvh5NW61LSPtkJ4w94X/kZ8k6EGN9oB+692W0v1oEsU3f8Cdj3b5CH7zYS0RD6R13p7qrWOjQJo7kwTO1rr58XXb6mCugLag2npbrfqzO9Qo+0DMjAthj/IUVeTit5kN/BIpmm4lHaMZV7y7HN43PE30AxtrjM85XiSHH3QSDnHzcnaqZiVXVH8I+oa5F7PHm+K7WsXfP9PWIqM2TyozqrqxMqNgll2vgT2RZrQgwOxpZi62+qnbJuiu8OSpXq2JxvmNGSEkFMcTpkTFqZs18/EDWf4piwWx05HSsH1aBgl098xVm23H/Qu7GTNpBE88f9CG+t2iAor8IxObCC1BQoOOChmBfIRPZHKRyYFiRmSMXE8sE/lPOjiql9RFhIpBZhOeLOURxOKgHs770hwoFEmu40CK9bJM/XNlZyjSAtBR/O6OugTC1QNZT2gHTXwtsBLdMb4n4Aet4mQ3zMnkRZZ3lpC6w8nXL05xfaph9pWbuKbu0m1CqQZNfIb5IBahie5mWJLrk0gND4NAu/IICC4zKkIKyunWT2WIIzNAPMeHQvRQ=
+
+script:
+  - make -f Bootstrap.mak $TRAVIS_OS_NAME
+  - bin/release/premake5 test
+
+before_deploy:
+  - mv bin/release/premake5 bin/release/premake5_$TRAVIS_OS_NAME
+deploy:
+  provider: releases
+  api_key: "$GITHUB_API_KEY"
+  file: bin/release/premake5_$TRAVIS_OS_NAME
+  skip_cleanup: true
+  'on':
+    tags: true
+    condition: "$CC = clang"
