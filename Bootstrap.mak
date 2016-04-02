@@ -1,5 +1,5 @@
-MSDEV	= vs2012
-LUA_DIR	= contrib/lua/src
+BUILD_DIR = build/bootstrap
+LUA_DIR = contrib/lua/src
 
 SRC		= src/host/*.c			\
 		$(LUA_DIR)/lapi.c		\
@@ -45,30 +45,37 @@ none:
 	@echo "   osx linux"
 
 mingw: $(SRC)
-	mkdir -p build/bootstrap
-	$(CC) -o build/bootstrap/premake_bootstrap -DPREMAKE_NO_BUILTIN_SCRIPTS -I"$(LUA_DIR)" $? -lole32
-	./build/bootstrap/premake_bootstrap embed
-	./build/bootstrap/premake_bootstrap --os=windows --to=build/bootstrap gmake
-	$(MAKE) -C build/bootstrap
+	mkdir -p $(BUILD_DIR)
+	$(CC) -o $(BUILD_DIR)/premake_bootstrap -DPREMAKE_NO_BUILTIN_SCRIPTS -I"$(LUA_DIR)" $? -lole32
+	./$(BUILD_DIR)/premake_bootstrap embed
+	./$(BUILD_DIR)/premake_bootstrap --os=windows --to=$(BUILD_DIR) gmake
+	$(MAKE) -C $(BUILD_DIR)
 
 osx: $(SRC)
-	mkdir -p build/bootstrap
-	$(CC) -o build/bootstrap/premake_bootstrap -DPREMAKE_NO_BUILTIN_SCRIPTS -DLUA_USE_MACOSX -I"$(LUA_DIR)" -framework CoreServices $?
-	./build/bootstrap/premake_bootstrap embed
-	./build/bootstrap/premake_bootstrap --to=build/bootstrap gmake
-	$(MAKE) -C build/bootstrap -j`getconf _NPROCESSORS_ONLN`
+	mkdir -p $(BUILD_DIR)
+	$(CC) -o $(BUILD_DIR)/premake_bootstrap -DPREMAKE_NO_BUILTIN_SCRIPTS -DLUA_USE_MACOSX -I"$(LUA_DIR)" -framework CoreServices $?
+	./$(BUILD_DIR)/premake_bootstrap embed
+	./$(BUILD_DIR)/premake_bootstrap --to=$(BUILD_DIR) gmake
+	$(MAKE) -C $(BUILD_DIR) -j`getconf _NPROCESSORS_ONLN`
 
 linux: $(SRC)
-	mkdir -p build/bootstrap
-	$(CC) -o build/bootstrap/premake_bootstrap -DPREMAKE_NO_BUILTIN_SCRIPTS -DLUA_USE_POSIX -DLUA_USE_DLOPEN -I"$(LUA_DIR)" $? -lm -ldl -lrt
-	./build/bootstrap/premake_bootstrap embed
-	./build/bootstrap/premake_bootstrap --to=build/bootstrap gmake
-	$(MAKE) -C build/bootstrap -j`getconf _NPROCESSORS_ONLN`
+	mkdir -p $(BUILD_DIR)
+	$(CC) -o $(BUILD_DIR)/premake_bootstrap -DPREMAKE_NO_BUILTIN_SCRIPTS -DLUA_USE_POSIX -DLUA_USE_DLOPEN -I"$(LUA_DIR)" $? -lm -ldl -lrt
+	./$(BUILD_DIR)/premake_bootstrap embed
+	./$(BUILD_DIR)/premake_bootstrap --to=$(BUILD_DIR) gmake
+	$(MAKE) -C $(BUILD_DIR) -j`getconf _NPROCESSORS_ONLN`
 
 windows: $(SRC)
-	if not exist build\bootstrap (mkdir build\bootstrap)
-	cl /Fo.\build\bootstrap\ /Fe.\build\bootstrap\premake_bootstrap.exe /DPREMAKE_NO_BUILTIN_SCRIPTS /I"$(LUA_DIR)" user32.lib ole32.lib $**
-	.\build\bootstrap\premake_bootstrap.exe embed
-	.\build\bootstrap\premake_bootstrap --to=build/bootstrap $(MSDEV)
-	devenv .\build\bootstrap\Premake5.sln /Upgrade
-	devenv .\build\bootstrap\Premake5.sln /Build Release
+	if not exist $(BUILD_DIR:/=\) (mkdir $(BUILD_DIR:/=\))
+	$(CC) /Fo.\$(BUILD_DIR:/=\)\ /Fe.\$(BUILD_DIR:/=\)\premake_bootstrap /DPREMAKE_NO_BUILTIN_SCRIPTS /I"$(LUA_DIR)" user32.lib ole32.lib $?
+	.\$(BUILD_DIR:/=\)\premake_bootstrap embed
+!	ifdef VS140COMNTOOLS
+		.\$(BUILD_DIR:/=\)\premake_bootstrap --to=$(BUILD_DIR) vs2015
+!	elseifdef VS120COMNTOOLS
+		.\$(BUILD_DIR:/=\)\premake_bootstrap --to=$(BUILD_DIR) vs2013
+!	elseifdef VS110COMNTOOLS
+		.\$(BUILD_DIR:/=\)\premake_bootstrap --to=$(BUILD_DIR) vs2012
+!	elseifdef VS100COMNTOOLS
+		.\$(BUILD_DIR:/=\)\premake_bootstrap --to=$(BUILD_DIR) vs2010
+!	endif
+	devenv .\$(BUILD_DIR:/=\)\Premake5.sln /Build Release
